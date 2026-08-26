@@ -1,0 +1,5 @@
+# Never commit captured land records (personal data)
+output/
+!output/.gitkeep
+__pycache__/
+*.pyc
