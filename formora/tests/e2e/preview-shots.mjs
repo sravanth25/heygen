@@ -1,0 +1,40 @@
+// Captures the preview screenshots in docs/preview. Needs a running server.
+import { chromium } from "playwright-core";
+const B = process.env.BASE_URL ?? "http://localhost:3000";
+const out = "docs/preview";
+const b = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH ?? "/opt/pw-browsers/chromium-1194/chrome-linux/chrome" });
+const d = await b.newPage({ viewport: { width: 1440, height: 900 } });
+await d.goto(B + "/", { waitUntil: "networkidle" });
+await d.screenshot({ path: `${out}/home-1440.png`, fullPage: true });
+await d.goto(B + "/products/creatine-hydration-lemon", { waitUntil: "networkidle" });
+await d.screenshot({ path: `${out}/product-1440.png` });
+await d.getByRole("button", { name: /Add to cart ·/ }).click();
+await d.waitForTimeout(400);
+await d.screenshot({ path: `${out}/cart-drawer-1440.png` });
+await d.keyboard.press("Escape");
+await d.goto(B + "/checkout", { waitUntil: "networkidle" });
+await d.fill("#f-contact-email", "preview@example.com");
+await d.selectOption("#f-address-state", "CA");
+await d.screenshot({ path: `${out}/checkout-1440.png` });
+const tb = await b.newPage({ viewport: { width: 768, height: 1024 } });
+await tb.goto(B + "/shop", { waitUntil: "networkidle" });
+await tb.screenshot({ path: `${out}/shop-768.png` });
+const m = await b.newPage({ viewport: { width: 375, height: 812 } });
+await m.goto(B + "/", { waitUntil: "networkidle" });
+await m.screenshot({ path: `${out}/home-375.png` });
+await m.goto(B + "/products/hydration-peach-mango", { waitUntil: "networkidle" });
+await m.evaluate(() => window.scrollTo(0, 1500));
+await m.waitForTimeout(500);
+await m.screenshot({ path: `${out}/product-sticky-bar-375.png` });
+if (process.env.E2E_ADMIN_PASSWORD) {
+  await d.goto(B + "/admin/login");
+  await d.fill("#a-email", process.env.E2E_ADMIN_EMAIL ?? "admin@example.com");
+  await d.fill("#a-password", process.env.E2E_ADMIN_PASSWORD);
+  await d.getByRole("button", { name: "Sign in" }).click();
+  await d.getByRole("heading", { name: "Orders" }).waitFor();
+  await d.screenshot({ path: `${out}/admin-orders-1440.png` });
+  await d.getByRole("link", { name: "FM-DEMO-0003" }).click();
+  await d.getByRole("heading", { name: "FM-DEMO-0003" }).waitFor();
+  await d.screenshot({ path: `${out}/admin-order-1440.png`, fullPage: true });
+}
+await b.close();
