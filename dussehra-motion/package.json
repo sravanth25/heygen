@@ -1,0 +1,22 @@
+{
+  "name": "dussehra-motion",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Remotion motion poster for the RedKarpet Happy Dussehra creative",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts DussehraPoster out/dussehra.mp4 --crf=18",
+    "still": "remotion still src/index.ts DussehraPoster out/preview.png --frame=150",
+    "plates": "python3 scripts/make_plates.py"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.535",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "remotion": "^4.0.535"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "typescript": "^5.6.3"
+  }
+}
