@@ -7,6 +7,8 @@ difference between the original and the cleaned plate.
 import json
 import cv2
 import numpy as np
+from PIL import Image
+from rembg import new_session, remove
 
 SRC = "public/poster.jpg"
 OUT = "public/layers"
@@ -40,6 +42,15 @@ for name, (x0, y0, x1, y1) in BOXES.items():
     mask[y0:y1, x0:x1] = m
 mask = cv2.dilate(mask, np.ones((7, 7), np.uint8))
 
+# Durga + lion foreground via BiRefNet, so it can move in depth against the scene.
+FG = (0, 600, 620, 1460)
+fx0, fy0, fx1, fy1 = FG
+crop = Image.fromarray(cv2.cvtColor(img[fy0:fy1, fx0:fx1], cv2.COLOR_BGR2RGB))
+fg_alpha = np.array(remove(crop, session=new_session("birefnet-general"), only_mask=True))
+fg_full = np.zeros((h, w), np.uint8)
+fg_full[fy0:fy1, fx0:fx1] = fg_alpha
+mask |= cv2.dilate((fg_full > 40).astype(np.uint8) * 255, np.ones((15, 15), np.uint8))
+
 clean = cv2.inpaint(img, mask, 9, cv2.INPAINT_TELEA)
 # Soften inpaint streaks a little inside the masked area only.
 blur = cv2.GaussianBlur(clean, (0, 0), 6)
@@ -48,6 +59,25 @@ clean = (clean * (1 - soft) + blur * soft).astype(np.uint8)
 cv2.imwrite(f"{OUT}/background.jpg", clean, [cv2.IMWRITE_JPEG_QUALITY, 95])
 
 meta = {}
+
+fg_rgba = np.dstack([img[fy0:fy1, fx0:fx1], fg_alpha])
+cv2.imwrite(f"{OUT}/durga.png", fg_rgba)
+meta["durga"] = {"x": fx0, "y": fy0, "w": fx1 - fx0, "h": fy1 - fy0}
+
+# Flags: red cloth in the temple area, feathered so a small ripple never shows seams.
+FL = (0, 0, 480, 780)
+lx0, ly0, lx1, ly1 = FL
+reg = img[ly0:ly1, lx0:lx1].astype(int)
+red = (reg[..., 2] > 170) & (reg[..., 1] < 75) & (reg[..., 0] < 75)
+red &= fg_full[ly0:ly1, lx0:lx1] < 10
+red = cv2.morphologyEx(red.astype(np.uint8) * 255, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
+red = cv2.morphologyEx(red, cv2.MORPH_CLOSE, np.ones((5, 5), np.uint8))
+n, lab, stats, _ = cv2.connectedComponentsWithStats(red)
+keep = [i for i in range(1, n) if stats[i, cv2.CC_STAT_AREA] > 250]
+red = np.isin(lab, keep).astype(np.uint8) * 255
+fa = cv2.GaussianBlur(cv2.dilate(red, np.ones((13, 13), np.uint8)), (0, 0), 3)
+cv2.imwrite(f"{OUT}/flags.png", np.dstack([clean[ly0:ly1, lx0:lx1], fa]))
+meta["flags"] = {"x": lx0, "y": ly0, "w": lx1 - lx0, "h": ly1 - ly0}
 for name, (x0, y0, x1, y1) in BOXES.items():
     o = img[y0:y1, x0:x1].astype(np.float32)
     c = clean[y0:y1, x0:x1].astype(np.float32)

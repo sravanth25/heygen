@@ -6,7 +6,7 @@
   "scripts": {
     "studio": "remotion studio src/index.ts",
     "render": "remotion render src/index.ts DussehraPoster out/dussehra.mp4 --crf=18",
-    "still": "remotion still src/index.ts DussehraPoster out/preview.png --frame=150",
+    "still": "remotion still src/index.ts DussehraPoster out/preview.png --frame=240",
     "plates": "python3 scripts/make_plates.py"
   },
   "dependencies": {

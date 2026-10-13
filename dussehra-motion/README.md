@@ -1,12 +1,17 @@
 # Dussehra motion poster (Remotion)
 
-Animates the RedKarpet "Happy Dussehra" poster into a 10s, 1080x1920 vertical video.
+Animates the RedKarpet "Happy Dussehra" poster into a 12s, 1080x1920 vertical video with sound.
 
 - `scripts/make_plates.py` splits `public/poster.jpg` into a clean background plate and
   transparent layers (logo, Durga's eyes, title, quote) in `public/layers/`.
-- `src/DussehraPoster.tsx` animates them: camera push-in, logo drop + blur-in, eyes
-  spring-in with a glow pulse, title wipe, quote reveal, gold shine sweeps, rotating
-  sun rays, flickering diyas, a pulsing aura behind Durga, rising embers and a vignette.
+  Durga and the lion are cut out with BiRefNet (`pip install "rembg[cpu]" opencv-python-headless`)
+  and the flags are isolated so they can ripple.
+- `scripts/make_audio.py` synthesises `public/soundtrack.wav` (tanpura drone, temple bells,
+  chimes, arrow whoosh and impact) on the cues in `src/timeline.ts`.
+- `src/DussehraPoster.tsx` tells the story: Durga's eyes open in the dark, a burst of light
+  reveals the scene, the logo/title/quote animate in, Rama's arrow strikes Ravana, and a
+  golden light sweep closes it. Throughout: depth parallax on Durga, waving flags, jewellery
+  sparkles, rotating sun rays and aura, flickering diyas and rising embers.
 
 ```
 npm install
